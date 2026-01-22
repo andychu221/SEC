@@ -3,19 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Market Price Monitor</title>
+    <title>Stock Price Monitor</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation/dist/chartjs-plugin-annotation.min.js"></script>
     
     <!-- SheetJS for .xlsx export -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-
-    <!-- jspreadsheet and Material Icons libraries -->
-    <script src="https://bossanova.uk/jspreadsheet/v5/jspreadsheet.js"></script>
-    <script src="https://jsuites.net/v5/jsuites.js"></script>
-    <link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v5/jspreadsheet.css" type="text/css" />
-    <link rel="stylesheet" href="https://jsuites.net/v5/jsuites.css" type="text/css" />
+    
+    <!-- Material Icons -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons" />
     
     <!-- Marked.js for Markdown rendering -->
@@ -31,18 +27,20 @@
             --header-bg: #f8f9fa;
             --hover-bg: #f5f5f5;
             --primary-color: #4a90e2;
-            --positive-color: #d32f2f;
-            --negative-color: #008000;
+            --separator-color: #ffffff; /* White separator */
+            --group-header-bg: #E0FFFF; /* Light Cyan */
+            --group-header-text: #00008B; /* DarkBlue */
+            --header-border-color: #999; /* Gray for header separator */
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: var(--bg-gradient);
             min-height: 100vh;
             color: var(--text-primary);
         }
-        .container { max-width: 1900px; margin: 0 auto; padding: 15px; }
+        .container { max-width: 98%; margin: 0 auto; padding: 15px; }
 
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -63,19 +61,23 @@
             margin-top: 10px;
         }
 
-        /* Simplified Header for Single Tab View */
-        .header-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid #eee; margin-bottom: 20px;
-            padding-bottom: 10px;
+        /* Top Title */
+        .page-title {
+            text-align: center;
+            font-size: 2.0rem;
+            font-weight: 800;
+            font-style: italic;
+            color: #00008B; /* Deep Blue */
+            margin-bottom: 10px;
+            margin-top: 10px;
         }
-        .app-title { font-size: 1.5rem; font-weight: bold; color: var(--text-primary); }
 
-        /* Market Cap (Price) Tab Styles */
         .mc-container {
             background-color: white;
             padding: 10px;
+            /* Scrollbar settings */
             overflow-x: auto;
+            width: 100%;
             border-radius: 8px;
         }
         .mc-header {
@@ -83,273 +85,291 @@
             background: #f8f9fa; padding: 10px; border-radius: 8px;
         }
         
-        .mc-settings-left {
-            display: flex; align-items: center; gap: 10px;
-        }
+        .mc-settings-left { display: flex; align-items: center; gap: 10px; }
+        .mc-settings-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
         
-        .mc-settings-right {
-            display: flex; align-items: center; gap: 10px; margin-left: auto;
-        }
-        
-        .mc-settings-group label { font-size: 0.9rem; font-weight: 500; color: #555; }
-
         .mc-wrapper {
             transform-origin: top left;
             transition: transform 0.2s;
             width: fit-content;
             min-width: 100%;
+            /* Ensure it takes up space so scrollbar appears */
+            padding-bottom: 5px; 
         }
         
-        /* Grid Layout Configuration */
-        .mc-grid-top {
-            display: flex; 
-            flex-direction: column; /* Force Stacked Layout (Rows) */
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .mc-block {
-            padding: 5px;
-            background: white;
-            width: 100%;
-        }
-        .mc-block-title {
-            font-weight: bold; font-size: 1.1rem; margin-bottom: 10px;
-            text-align: left; color: black;
-            border-bottom: 2px solid black;
-            padding-bottom: 5px;
-            padding-left: 5px;
-        }
-        
+        /* Table Layout */
         .mc-table {
-            border-collapse: collapse; font-size: 0.85rem; 
-            table-layout: fixed; /* Fixed layout ensures alignment */
+            border-collapse: separate; 
+            border-spacing: 0;
+            font-size: 0.8rem; 
+            table-layout: fixed; 
         }
         .mc-table th, .mc-table td {
-            border: none;
             padding: 0 4px; 
-            text-align: center; /* Center alignment by default */
+            text-align: center; 
             white-space: nowrap;
-            height: 30px;
-            line-height: 30px;
-        }
-        .mc-table th {
-            background-color: white; 
-            font-weight: 600;
-            border-bottom: 1px solid #333;
-            overflow: hidden; text-overflow: ellipsis;
+            height: 24px;
+            line-height: 24px;
+            border-right: none; 
+            /* Removed general bottom border */
+            border-bottom: none;
         }
         
-        /* Fixed Column Widths for Alignment */
-        .mc-col-date {
-            width: 100px;
-            min-width: 100px;
-            text-align: center !important;
+        /* Separator Column (Gap) */
+        .col-separator { 
+            width: 20px; 
+            min-width: 20px; 
+            background-color: var(--separator-color) !important; 
+            padding: 0 !important;
+            border: none !important;
+        }
+
+        /* Row 1: Group Name (3D Effect) */
+        .header-group-row th {
+            background-color: var(--group-header-bg);
+            color: var(--group-header-text);
+            font-style: italic;
+            font-weight: 800;
+            font-size: 1.0rem;
+            padding: 8px 0;
+            
+            /* Micro 3D Convex Effect */
+            border-top: 1px solid #ffffff;
+            border-left: 1px solid #ffffff;
+            border-right: 1px solid #a0a0a0;
+            border-bottom: 1px solid #a0a0a0;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+            
+            /* Outer Gray Outline */
+            outline: 1px solid #ccc;
+        }
+        /* Hide group styles for separators */
+        .header-group-row th.col-separator {
+            background-color: white !important;
+            border: none !important;
+            box-shadow: none !important;
+            outline: none !important;
+        }
+
+        /* Row 2: Name Headers */
+        .header-name-row th {
+            border-bottom: 1px solid #ccc;
+            background: #fff;
+            font-size: 0.85rem;
+            font-weight: bold;
+            padding-top: 6px;
             color: #333;
         }
+        .header-name-row th.col-separator { border: none !important; }
+
+        /* Row 3: Sub Labels */
+        .header-sub-row th {
+            /* Changed to Gray Border as requested */
+            border-bottom: 2px solid var(--header-border-color);
+            background: #fff;
+            font-weight: normal;
+            font-size: 0.75rem;
+            padding-bottom: 6px;
+            vertical-align: top;
+            color: #666;
+        }
+        .header-sub-row th.col-separator { border: none !important; }
         
-        .mc-col-ticker {
-            width: 90px;
-            min-width: 90px;
-            max-width: 90px;
+        .text-red { color: red !important; font-weight: bold; }
+        
+        /* Specific fix for wrapping NTD text */
+        .header-sub-row th.allow-wrap {
+            white-space: normal;
+            line-height: 1.1;
+            font-size: 0.7rem;
+            padding: 2px;
+            vertical-align: bottom;
         }
 
-        /* Inputs in Table */
+        /* Data Columns */
+        .col-date { 
+            width: 85px; min-width: 85px; 
+            color: #333; 
+            font-weight: normal; 
+            text-align: center; background: #fff; 
+        }
+        .col-data { width: 80px; min-width: 80px; } 
+        
+        /* Inputs & Text */
+        .cell-content {
+            display: flex;
+            justify-content: flex-end; /* Align everything right */
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            position: relative; /* Context for absolute star */
+        }
+
         .cell-editable {
-            width: 100%; border: none; background: transparent; 
-            text-align: right; /* Values align right inside the centered flex container for better number readability */
-            font-family: inherit; font-size: inherit;
-            outline: none;
-            cursor: text;
+            border: none; background: transparent; 
+            text-align: right; 
+            font-family: 'Segoe UI', sans-serif;
+            font-variant-numeric: tabular-nums; 
+            font-size: inherit;
+            outline: none; cursor: text;
+            flex-grow: 1;
+            padding-right: 2px;
         }
         .cell-editable:focus { background: #e8f0fe; }
-        
-        .header-editable {
-            width: 100%; border: none; background: transparent; 
-            text-align: center; font-weight: bold; font-family: inherit;
-            outline: none;
-            cursor: pointer;
+
+        /* Missing Data Styling */
+        .cell-missing-recent { 
+            color: blue; 
+            width: 100%; 
+            text-align: right; 
+            padding-right: 20px; 
         }
-        .header-editable:focus { border-bottom: 1px solid var(--primary-color); }
+        .cell-missing-dash { color: black; width: 100%; text-align: center; padding-right: 16px; }
 
-        /* Indicators */
-        .triangle-up { color: red; margin-left: 2px; font-size: 0.8rem; display: inline-block; width: 12px; text-align: center; }
-        .triangle-down { color: green; margin-left: 2px; font-size: 0.8rem; display: inline-block; width: 12px; text-align: center; }
-        .triangle-placeholder { display: inline-block; width: 14px; margin-left: 2px; } /* Matches triangle width + margin */
-        .dividend-mark { color: blue; font-weight: bold; margin-left: 1px; cursor: help; font-size: 0.9rem; }
+        /* Arrows & Indicators */
+        .indicator-box {
+            width: 16px; 
+            min-width: 16px;
+            display: flex; 
+            justify-content: center; 
+            margin-left: 2px;
+            position: relative; /* For star */
+            overflow: visible;
+        }
 
-        /* Controls */
+        .triangle-up { color: black; font-size: 0.8rem; }
+        .triangle-down { color: black; font-size: 0.8rem; }
+        .limit-up { color: black; font-size: 0.8rem; }
+        .limit-down { color: black; font-size: 0.8rem; }
+
+        .ex-div-up { color: #008000; font-weight: bold; font-size: 0.8rem; }
+        .ex-div-down { color: #d32f2f; font-weight: bold; font-size: 0.8rem; }
+        
+        /* Star positioned absolutely to not push arrow */
+        .star-mark { 
+            font-size: 0.8rem; 
+            position: absolute;
+            left: 100%; /* Push outside to right */
+            top: -2px;
+            width: 12px;
+        }
+
+        /* Separator Row (Horizontal Line in table body) */
+        .separator-row td {
+            border-bottom: 2px solid #ccc;
+            height: 5px !important;
+            line-height: 5px !important;
+            padding: 0;
+        }
+        .separator-row .col-separator { background-color: var(--separator-color) !important; border: none; }
+
+        /* Footnote */
+        #footnote-area {
+            margin-top: 30px; padding: 10px;
+            /* Changed to Gray Border as requested */
+            border-top: 2px solid var(--header-border-color);
+            font-size: 0.85rem; line-height: 1.5;
+            color: #000; outline: none; white-space: pre-wrap;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
         .controls-input {
             border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px;
-            background-color: white; cursor: pointer; font-size: 0.9rem;
-            width: 100px;
-        }
-        .controls-input-sm {
-            border: 1px solid #ccc; padding: 4px; border-radius: 4px;
-            width: 60px; text-align: center;
-        }
-
-        /* Specific fix for date input size */
-        #mc-as-of-date {
-            padding: 2px 4px;
-            font-size: 0.85rem;
-            width: auto;
-            max-width: 125px; /* Restrict width */
-            height: 28px;
+            background-color: white; cursor: pointer; font-size: 0.9rem; width: 100px;
         }
         
-        /* Footnote Area */
-        #footnote-area {
-            margin-top: 30px;
-            padding: 15px;
-            border-top: 1px solid #333;
-            background: white;
-            min-height: 80px;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            color: #444;
-            outline: none;
-        }
-        #footnote-area:focus { background: #f9f9f9; }
-        #footnote-label { font-size: 0.8rem; color: #888; margin-bottom: 5px; font-weight: bold; }
+        #mc-as-of-date { padding: 2px 4px; font-size: 0.85rem; width: auto; max-width: 125px; height: 28px; }
 
-        /* Print Styles - Optimized for Single Page Landscape */
+        /* Config Modal */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 10000;
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white; padding: 20px; border-radius: 8px; width: 650px; max-height: 80vh; overflow-y: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .config-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .config-row input { padding: 4px; border: 1px solid #ddd; border-radius: 4px; }
+        
+        /* Print Styles */
         @media print {
-            @page { size: landscape; margin: 5mm; } /* Small margins, Landscape */
-            
-            body { 
-                background: white; 
-                -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact;
-                margin: 0;
-                padding: 0;
+            @page { size: landscape; margin: 5mm; }
+            body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
+            .container { max-width: none; width: 100%; margin: 0; padding: 0; }
+            .header-bar, .mc-header, #loading-overlay, .mc-settings-left, .mc-settings-right { display: none !important; }
+            .main-content, .mc-container { box-shadow: none; padding: 0; margin: 0; border: none; }
+            .page-title { margin-bottom: 10px; font-size: 2rem; display: block; }
+            .mc-wrapper { transform: scale(0.60); transform-origin: top left; width: 165%; }
+            .mc-block { break-inside: avoid; page-break-inside: avoid; }
+            .col-separator { background-color: #ffffff !important; }
+            .header-group-row th { 
+                background-color: #E0FFFF !important; 
+                color: #00008B !important;
+                border: 1px solid #aaa !important; 
             }
+            .header-group-row th.col-separator { border: none !important; }
+            .ex-div-up { color: #008000 !important; }
+            .ex-div-down { color: #d32f2f !important; }
+            .cell-missing-recent { color: blue !important; }
+            .text-red { color: red !important; }
             
-            .container { 
-                max-width: none; 
-                width: 100%; 
-                margin: 0; 
-                padding: 0; 
-            }
-            
-            /* Hide UI elements */
-            .header-bar, 
-            .mc-header, 
-            #loading-overlay, 
-            #footnote-label,
-            .mc-settings-left,
-            .mc-settings-right { 
-                display: none !important; 
-            }
-            
-            .main-content {
-                box-shadow: none;
-                padding: 0;
-                margin: 0;
-                border: none;
-            }
-            
-            .mc-container {
-                padding: 0;
-                border: none;
-            }
-            
-            #market-cap-tab { 
-                position: static; 
-                width: 100%; 
-                display: block;
-            }
-            
-            .mc-wrapper { 
-                /* Scale calculation: 
-                   Page width ~297mm (A4 Landscape). 
-                   15 cols * ~90px + 100px date ~= 1450px content.
-                   Approx scale 0.65 fits comfortably. 
-                */
-                transform: scale(0.65); 
-                transform-origin: top left; 
-                width: 145%; /* Compensate for scale down to fill width */
-            }
-            
-            .mc-block {
-                break-inside: avoid; 
-                page-break-inside: avoid;
-                margin-bottom: 10px;
-                padding: 0;
-            }
-            
-            /* Clean up table for print */
-            .mc-table th { border-bottom: 1px solid #000; }
-            input { border: none; background: transparent; appearance: none; }
-            
-            /* Footnote */
-            #footnote-area { 
-                border-top: 1px solid black; 
-                margin-top: 5px;
-                padding-top: 5px;
-                font-size: 9pt;
-                min-height: auto;
-            }
-            
-            /* Ensure colors print */
-            .triangle-up { color: red !important; }
-            .triangle-down { color: green !important; }
-            .dividend-mark { color: blue !important; }
+            /* Print border fixes */
+            .mc-table th, .mc-table td { border-bottom: none !important; }
+            .header-sub-row th { border-bottom: 2px solid #999 !important; }
+            .separator-row td { border-bottom: 2px solid #999 !important; }
+            #footnote-area { border-top: 2px solid #999 !important; }
         }
     </style>
 </head>
 <body>
     <div id="loading-overlay">
         <div class="spinner"></div>
-        <p id="loading-text" style="margin-top:20px;">Loading Data...</p>
+        <p id="loading-text" style="margin-top:20px;">Loading Market Data...</p>
     </div>
 
-    <!-- Datalist for Ticker Selection -->
-    <datalist id="ticker-options"></datalist>
+    <!-- Config Modal -->
+    <div id="config-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px;">Configuration</h3>
+            <div style="font-size:0.8rem; color:#666; margin-bottom:10px; display:flex; gap:10px;">
+                <span style="width:20px;">#</span>
+                <span style="width:100px;">Ticker ID</span>
+                <span style="width:100px;">Name</span>
+                <span style="width:120px;">SubLabel</span>
+                <span style="width:50px;">Dec</span>
+            </div>
+            <div id="config-list"></div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="closeConfig()" style="padding: 5px 15px; cursor: pointer;">Close & Apply</button>
+            </div>
+        </div>
+    </div>
 
     <div class="container">
         <div class="main-content">
-            <div class="header-bar">
-                <div class="app-title"><i class="material-icons" style="vertical-align: text-bottom;">price_check</i> Market Price Monitor</div>
-                <div style="font-size: 0.9rem; color: #666;">
-                    All cells editable | 15 Tickers per Row
-                </div>
-            </div>
-
             <div id="market-cap-tab">
                 <div class="mc-header">
                     <div class="mc-settings-left">
                         <label>As of:</label>
-                        <input type="date" id="mc-as-of-date" class="controls-input" onchange="renderMarketCapTable()">
+                        <input type="date" id="mc-as-of-date" class="controls-input" onchange="renderTable()">
+                        <button class="controls-input" onclick="openConfig()" style="width: auto;"><i class="material-icons" style="font-size:14px; vertical-align:middle;">settings</i> Config</button>
                     </div>
                     
                     <div class="mc-settings-right">
-                        <label>Lookback Days:</label>
-                        <input type="number" id="setting-days" class="controls-input-sm" value="20" min="1" max="100" onchange="renderMarketCapTable()">
-                        
-                        <div style="border-left: 1px solid #ccc; height: 20px; margin: 0 10px;"></div>
-
-                        <button class="controls-input" onclick="zoomTable(0.1)" style="width:40px; text-align:center;"><i class="material-icons" style="font-size:16px;">add</i></button>
-                        <button class="controls-input" onclick="zoomTable(-0.1)" style="width:40px; text-align:center;"><i class="material-icons" style="font-size:16px;">remove</i></button>
+                        <button class="controls-input" onclick="zoomTable(0.05)" style="width:40px; text-align:center;"><i class="material-icons" style="font-size:16px;">add</i></button>
+                        <button class="controls-input" onclick="zoomTable(-0.05)" style="width:40px; text-align:center;"><i class="material-icons" style="font-size:16px;">remove</i></button>
                         <button class="controls-input" onclick="window.print()" style="width:auto;"><i class="material-icons" style="font-size:16px; vertical-align:text-bottom;">print</i> Print</button>
                     </div>
                 </div>
 
+                <div class="page-title">Stock Price</div>
+
                 <div class="mc-container">
                     <div class="mc-wrapper" id="mc-wrapper">
-                        <!-- Dynamic Grid -->
                         <div class="mc-grid-top" id="mc-grid"></div>
-                        
-                        <!-- Editable Footnote -->
-                        <div style="margin-top: 20px;">
-                            <div id="footnote-label">FOOTNOTES (Editable):</div>
-                            <div id="footnote-area" contenteditable="true">
-                                * Blue asterisk (*) indicates a potential dividend or ex-rights event (Price Return deviates from Total Return > 0.1%).<br>
-                                △ indicates price increase. ▽ indicates price decrease.<br>
-                                Prices for Taiwan stocks follow market tick rules (< 50: 2 decimals, 50-500: 1 decimal, >= 500: integer).<br>
-                                Click any price to edit manually. Click any Ticker header to change the stock.
-                            </div>
-                        </div>
+                        <div id="footnote-area" contenteditable="true">Source: Yahoo Finance</div>
                     </div>
                 </div>
             </div>
@@ -357,51 +377,57 @@
     </div>
 
     <script>
-        // --- Configuration & Data ---
-        const TICKER_NAMES = {
-            '2330.TW': 'TSMC', 'TSM': 'TSMC ADR', '.TWII': 'TWSE', '.SOX': 'SOX', '.SPX': 'S&P 500', '.MCI': 'MCI',
-            'NVDA': 'Nvidia', 'AAPL': 'Apple', 'AVGO': 'Broadcom', 'QCOM': 'Qualcomm', 'AMD': 'AMD',
-            'INTC': 'Intel', '005930.KS': 'Samsung', '2303.TW': 'UMC', 'MSFT': 'Microsoft', 'GOOGL': 'Google',
-            'AMZN': 'Amazon', 'META': 'Meta', 'TSLA': 'Tesla', 'ASML.AS': 'ASML', 'AMAT': 'AMAT',
-            'KLAC': 'KLAC', 'LRCX': 'Lam Research', 'MU': 'Micron', 'TXN': 'TI', 'ADI': 'ADI',
-            '2454.TW': 'MediaTek', '3711.TW': 'ASE', '2379.TW': 'Realtek', '3034.TW': 'Novatek',
-            '6758.T': 'Sony', '8035.T': 'TEL', '6526.T': 'Socionext', '688981.SS': 'SMIC',
-            '2388.TW': 'VIA', '3443.TW': 'GUC', '3661.TW': 'Alchip', '6669.TW': 'Wiwynn'
-        };
+        // --- Configuration ---
+        let COLUMN_CONFIG = [
+            // TAIEX Group
+            { id: '.TWII', name: 'TWSE', subLabel: '', group: 'TAIEX', noArrow: true },
+            { id: '2330.TW', name: 'TSMC', subLabel: 'Close', group: 'TAIEX', fixedDecimals: 1 },
+            { id: '2330.TW', name: 'TSMC', subLabel: 'Volume', group: 'TAIEX', type: 'volume', noArrow: true, isMergedHelper: true }, 
+            { id: 'TWD=', name: 'UST/TWD', subLabel: 'NTD 11:00 Fixing', subLabelClass: 'text-red allow-wrap', group: 'TAIEX', type: 'fx', noArrow: true },
 
-        // Groups configuration: Exactly 2 groups, 15 tickers each
-        // showDate: Both true so they align perfectly with same columns structure
-        let marketGroups = [
-            { 
-                title: 'Key Indices & Foundries & AI Leaders', 
-                showDate: true,
-                tickers: [
-                    '.SPX', '.SOX', '.TWII', '.MCI', '2330.TW', 
-                    'TSM', 'INTC', '005930.KS', '2303.TW', '688981.SS',
-                    'NVDA', 'AMD', 'AVGO', 'QCOM', '2454.TW'
-                ] 
-            },
-            { 
-                title: 'Equipment, Memory & Big Tech', 
-                showDate: true,
-                tickers: [
-                    'ASML.AS', 'AMAT', 'LRCX', 'MU', '8035.T',
-                    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA',
-                    'META', 'TXN', 'ADI', '6758.T', '3711.TW'
-                ] 
-            }
+            { type: 'separator' },
+
+            // Big Group
+            { id: 'TSM', name: 'TSM ADR', subLabel: '', group: 'TAIEX/NYSE/NASDAQ/HKEX/KSE/STAR' },
+            { id: 'PREMIUM', name: 'Premium', subLabel: '', group: 'TAIEX/NYSE/NASDAQ/HKEX/KSE/STAR', type: 'calc', noArrow: true },
+            { id: '5347.TWO', name: 'VIS', subLabel: '', group: 'TAIEX/NYSE/NASDAQ/HKEX/KSE/STAR' }, 
+            { id: '2303.TW', name: 'UMC', subLabel: '', group: 'TAIEX/NYSE/NASDAQ/HKEX/KSE/STAR' },
+            { id: '005930.KS', name: 'Samsung', subLabel: 'KRW', subLabelClass: 'text-red', group: 'TAIEX/NYSE/NASDAQ/HKEX/KSE/STAR' },
+            { id: 'INTC', name: 'Intel', subLabel: '', group: 'TAIEX/NYSE/NASDAQ/HKEX/KSE/STAR' },
+            { id: 'GFS', name: 'GFS', subLabel: '', group: 'TAIEX/NYSE/NASDAQ/HKEX/KSE/STAR' },
+            { id: '0981.HK', name: 'SMIC', subLabel: 'H-share', subLabelClass: 'text-red', group: 'TAIEX/NYSE/NASDAQ/HKEX/KSE/STAR' },
+            { id: '688981.SS', name: 'SMIC', subLabel: 'A-share', subLabelClass: 'text-red', group: 'TAIEX/NYSE/NASDAQ/HKEX/KSE/STAR' },
+            { id: 'AAPL', name: 'AAPL', subLabel: '', group: 'TAIEX/NYSE/NASDAQ/HKEX/KSE/STAR' },
+            { id: 'QCOM', name: 'QCOM', subLabel: '', group: 'TAIEX/NYSE/NASDAQ/HKEX/KSE/STAR' },
+            { id: 'NVDA', name: 'NVDA', subLabel: '', group: 'TAIEX/NYSE/NASDAQ/HKEX/KSE/STAR' },
+            { id: 'AVGO', name: 'AVGO', subLabel: '', group: 'TAIEX/NYSE/NASDAQ/HKEX/KSE/STAR' },
+            { id: 'AMD', name: 'AMD', subLabel: '', group: 'TAIEX/NYSE/NASDAQ/HKEX/KSE/STAR' },
+            { id: '2454.TW', name: 'MTK', subLabel: '', group: 'TAIEX/NYSE/NASDAQ/HKEX/KSE/STAR' }, 
+
+            { type: 'separator' },
+
+            // Indices Group
+            { id: '.DJI', name: '.DJI', subLabel: '', group: 'Indices' },
+            { id: '.SOX', name: 'SOX', subLabel: '', group: 'Indices' },
+            { id: '.MCI', name: 'MCI', subLabel: '', group: 'Indices', type: 'mci', fixedDecimals: 2 }
         ];
 
-        let allData = [];
         let dataByTicker = {};
+        let eventsData = {};
         let summaryReferenceDate = new Date();
         let zoomLevel = 1.0;
-        let allAvailableTickers = [];
+        let columnDecimalRules = {}; 
+        
+        let tsmExDivInfo = null;
+        let tsmAccumDiv = 0;
+        let splitInfoStr = "";
 
-        // --- Initialization ---
+        const START_STATS_DATE = new Date('2009-06-12').getTime();
+
         document.addEventListener('DOMContentLoaded', () => {
             loadData();
-            window.addEventListener('resize', autoFitTable);
+            if(window.innerWidth < 1600) zoomLevel = 0.85;
+            applyZoom();
         });
 
         async function loadData() {
@@ -409,50 +435,47 @@
                 'https://raw.githubusercontent.com/andychu221/yhfinance-fred-data/main/market_data/Equity_Index.json',
                 'https://raw.githubusercontent.com/andychu221/yhfinance-fred-data/main/market_data/TW_Stocks.json',
                 'https://raw.githubusercontent.com/andychu221/yhfinance-fred-data/main/market_data/US_Stocks.json',
-                'https://raw.githubusercontent.com/andychu221/yhfinance-fred-data/main/market_data/custom_index.json'
+                'https://raw.githubusercontent.com/andychu221/yhfinance-fred-data/main/market_data/custom_index.json',
+                'https://raw.githubusercontent.com/andychu221/yhfinance-fred-data/main/market_data/FX.json',
+                'https://raw.githubusercontent.com/andychu221/yhfinance-fred-data/main/market_data/events.json'
             ];
 
             try {
                 const results = await Promise.all(urls.map(u => fetch(u).then(r => r.ok ? r.json() : null)));
                 
-                // Process Data
                 results.forEach((json, idx) => {
                     if(!json) return;
                     const isMCI = idx === 3;
-                    if(isMCI) {
-                        if(json.data) processTickerData('.MCI', { date: Object.keys(json.data), close: Object.values(json.data) });
+                    const isFX = idx === 4;
+                    const isEvents = idx === 5;
+                    
+                    if(isEvents) {
+                        eventsData = json; 
+                    } else if (isMCI) {
+                        // Ignore
+                    } else if (isFX) {
+                         if(json['TWD=']) processTickerData('TWD=', json['TWD=']);
+                         if(json['TWD=X']) processTickerData('TWD=X', json['TWD=X']);
                     } else {
                         Object.entries(json).forEach(([t, d]) => processTickerData(t, d));
                     }
                 });
+                
+                calculateMCI();
+                calculateTSMCStats();
+                calculateSplitStats();
 
-                // Set latest date
                 let maxTs = 0;
-                Object.values(dataByTicker).forEach(arr => {
-                    if(arr.length) {
-                        const last = arr[arr.length-1].date.getTime();
-                        if(last > maxTs) maxTs = last;
-                    }
-                });
+                if(dataByTicker['2330.TW'] && dataByTicker['2330.TW'].length) {
+                     maxTs = dataByTicker['2330.TW'][dataByTicker['2330.TW'].length-1].date.getTime();
+                } 
+                
                 summaryReferenceDate = new Date(maxTs);
                 document.getElementById('mc-as-of-date').value = summaryReferenceDate.toISOString().split('T')[0];
-
-                // Populate Datalist
-                allAvailableTickers = Object.keys(dataByTicker).sort();
-                const datalist = document.getElementById('ticker-options');
-                allAvailableTickers.forEach(t => {
-                    const opt = document.createElement('option');
-                    opt.value = t;
-                    const name = TICKER_NAMES[t] || t;
-                    opt.label = `${name} (${t})`;
-                    datalist.appendChild(opt);
-                });
-
                 document.getElementById('loading-overlay').style.display = 'none';
-                renderMarketCapTable();
                 
-                // Trigger auto fit after initial render
-                setTimeout(autoFitTable, 100);
+                renderFootnotes();
+                renderTable();
 
             } catch(e) {
                 console.error(e);
@@ -463,17 +486,15 @@
         function processTickerData(rawTicker, data) {
             if(!data || !data.date || !data.close) return;
             
-            // Clean Ticker Name
             let ticker = rawTicker;
             if (ticker.endsWith('.O') || ticker.endsWith('.N')) ticker = ticker.split('.')[0];
             if (ticker === 'TSM.N') ticker = 'TSM';
+            if (ticker === '0059.KS') ticker = '005930.KS'; 
 
             const clean = [];
             const dates = data.date;
             const prices = data.close;
-            const dailyRets = data.dailyTotalReturn || [];
-
-            let prevTri = 100;
+            const vols = data.volume || [];
 
             for(let i=0; i<dates.length; i++) {
                 const dStr = dates[i];
@@ -482,44 +503,219 @@
                 const p = prices[i];
                 if(p == null) continue;
                 
-                // Calculate TRI
-                let ret = 0;
-                if(i > 0) {
-                    if(dailyRets[i] != null) ret = dailyRets[i];
-                    else if(prices[i-1]) ret = (p / prices[i-1]) - 1;
-                }
-                const tri = prevTri * (1 + ret);
-                prevTri = tri;
-
                 clean.push({
                     date: new Date(dStr),
+                    dateStr: dStr, // Keep string for event lookup
                     price: p,
-                    tri: tri
+                    volume: vols[i] || 0
                 });
             }
-            
             if(!dataByTicker[ticker]) dataByTicker[ticker] = clean;
         }
 
-        // --- Core Logic ---
+        function calculateMCI() {
+            const weights = [
+                { t: 'NVDA', w: 0.3 }, { t: 'AAPL', w: 0.3 }, { t: '2454.TW', w: 0.1 },
+                { t: 'AVGO', w: 0.1 }, { t: 'AMD', w: 0.1 }, { t: 'QCOM', w: 0.1 }
+            ];
 
-        function getRecentTradingDays(anchor, daysCount) {
-            const refTicker = dataByTicker['.SPX'] ? '.SPX' : (dataByTicker['2330.TW'] ? '2330.TW' : Object.keys(dataByTicker)[0]);
-            const data = dataByTicker[refTicker];
-            if(!data) return [];
+            let dateSet = new Set();
+            weights.forEach(c => {
+                if(dataByTicker[c.t]) dataByTicker[c.t].forEach(d => dateSet.add(d.date.getTime()));
+            });
+            let dates = Array.from(dateSet).sort((a,b) => a-b);
+            
+            if(dates.length === 0) return;
 
+            let mciData = [];
+            let currentIndex = 100;
+            mciData.push({ date: new Date(dates[0]), dateStr: dates[0], price: 100 });
+
+            for(let i=1; i<dates.length; i++) {
+                const dTime = dates[i];
+                let portRet = 0;
+                
+                weights.forEach(c => {
+                    const arr = dataByTicker[c.t];
+                    if(!arr) return;
+                    const ptIdx = arr.findIndex(d => d.date.getTime() === dTime);
+                    if(ptIdx > 0) {
+                         const curr = arr[ptIdx];
+                         const prev = arr[ptIdx-1];
+                         const ret = (curr.price / prev.price) - 1;
+                         portRet += c.w * ret;
+                    }
+                });
+                
+                currentIndex = currentIndex * (1 + portRet);
+                mciData.push({ 
+                    date: new Date(dTime), 
+                    dateStr: new Date(dTime).toISOString().split('T')[0],
+                    price: currentIndex
+                });
+            }
+            
+            dataByTicker['.MCI'] = mciData;
+        }
+
+        function normalizeTicker(t) {
+            if(!t) return '';
+            if(t.indexOf('.') > -1 && !t.endsWith('.TW') && !t.endsWith('.TWO') && !t.endsWith('.KS') && !t.endsWith('.HK') && !t.endsWith('.SS') && !t.startsWith('.')) {
+                return t.split('.')[0];
+            }
+            return t;
+        }
+
+        function findEventsForTicker(tickerId) {
+            // Try Exact
+            if(eventsData[tickerId]) return eventsData[tickerId];
+            
+            // Try Normalized (e.g. NVDA matches NVDA.O)
+            const norm = normalizeTicker(tickerId);
+            
+            // Search keys in eventsData
+            const keys = Object.keys(eventsData);
+            for(let k of keys) {
+                if(normalizeTicker(k) === norm) return eventsData[k];
+            }
+            return { events: [] };
+        }
+
+        function calculateTSMCStats() {
+            const events = findEventsForTicker('2330.TW');
+            const evList = events.events || [];
+            
+            // 1. Last Dividend Date
+            const sorted = [...evList].filter(e => e.type === 'dividend').sort((a,b) => new Date(b.date) - new Date(a.date));
+            if(sorted.length > 0) {
+                 const d = new Date(sorted[0].date);
+                 const m = String(d.getMonth() + 1).padStart(2, '0');
+                 const day = String(d.getDate()).padStart(2, '0');
+                 tsmExDivInfo = `${d.getFullYear()}/${m}/${day}`;
+            }
+
+            // 2. Accum Dividends since 2009-06-12
+            let accum = 0;
+            evList.forEach(e => {
+                if(e.type === 'dividend' && new Date(e.date).getTime() >= START_STATS_DATE) {
+                    accum += e.amount;
+                }
+            });
+            tsmAccumDiv = accum.toFixed(2);
+        }
+
+        function calculateSplitStats() {
+            let splitTextArr = [];
+            
+            let tickersToCheck = new Set();
+            COLUMN_CONFIG.forEach(col => {
+                if(col.id && !col.id.startsWith('.') && col.id !== 'PREMIUM') tickersToCheck.add(col.id);
+            });
+
+            tickersToCheck.forEach(tid => {
+                const events = findEventsForTicker(tid);
+                
+                if(events && events.events) {
+                    // Filter splits since 2009-06-12
+                    const splits = events.events.filter(e => e.type === 'split' && new Date(e.date).getTime() >= START_STATS_DATE);
+                    if(splits.length > 0) {
+                        let totalRatio = 1;
+                        splits.forEach(s => {
+                            totalRatio *= (s.numerator / s.denominator);
+                        });
+                        
+                        // Format: X:1
+                        // trim trailing zeros in decimal
+                        const ratioStr = parseFloat(totalRatio.toFixed(4)) + "";
+                        
+                        const name = events.name || tid;
+                        splitTextArr.push(`${name} Split ${ratioStr}:1`);
+                    }
+                }
+            });
+            
+            if(splitTextArr.length > 0) {
+                splitInfoStr = "(5) " + splitTextArr.join(', ');
+            } else {
+                splitInfoStr = "(5) Recent Stock Splits: -";
+            }
+        }
+
+        function renderFootnotes() {
+            const area = document.getElementById('footnote-area');
+            let tsmInfo = tsmExDivInfo ? `<span style="color:red;">(1) TSMC ex-dividend date ${tsmExDivInfo}</span>` : '(1) TSMC ex-dividend date -';
+            let divInfo = `(2) TSMC accumulated dividend per share since 2009: ${tsmAccumDiv}`;
+            
+            area.innerHTML = `Source: Yahoo Finance
+${tsmInfo}
+${divInfo}
+(3)
+(4)
+${splitInfoStr}`;
+        }
+
+        function getTableDates(anchor) {
+            const refTicker = '2330.TW';
+            const data = dataByTicker[refTicker] || [];
             const anchorTime = anchor.getTime();
-            const valid = data.filter(d => d.date.getTime() <= anchorTime);
-            return valid.slice(-daysCount).map(d => d.date).reverse(); 
+            
+            // 1. Recent 19 Days
+            let recent = [];
+            if(data.length) {
+                recent = data.filter(d => d.date.getTime() <= anchorTime).slice(-19).map(d => d.date).reverse();
+            }
+
+            // 2. History Dates
+            const history = [];
+
+            // A. Recent Ex-Div (Events)
+            let exDivDate = null;
+            const tsmEvents = findEventsForTicker('2330.TW');
+            if(tsmEvents && tsmEvents.events) {
+                 const evs = tsmEvents.events.filter(e => e.type === 'dividend');
+                 const sortedEvs = evs.sort((a,b) => new Date(b.date) - new Date(a.date));
+                 const lastEv = sortedEvs.find(e => new Date(e.date).getTime() <= anchorTime);
+                 if(lastEv) {
+                     const evD = new Date(lastEv.date);
+                     exDivDate = evD; 
+                 }
+            }
+            if(exDivDate) history.push(exDivDate);
+
+            // B. Mandatory Dates
+            const mandatoryDates = [
+                '2019-01-02', '2018-01-02', '2017-01-03',
+                '2016-01-04', '2015-01-05', '2014-01-02', '2013-01-02'
+            ];
+
+            const currentYear = anchor.getFullYear();
+            for(let y = currentYear - 1; y >= 2020; y--) {
+                const firstDay = data.find(d => d.date.getFullYear() === y);
+                if(firstDay && firstDay.date.getTime() <= anchorTime) {
+                    history.push(firstDay.date);
+                }
+            }
+
+            mandatoryDates.forEach(dStr => {
+                const targetD = new Date(dStr);
+                if(!history.find(h => h.getTime() === targetD.getTime())) {
+                    history.push(targetD);
+                }
+            });
+
+            history.sort((a,b) => b.getTime() - a.getTime());
+            history.push(new Date('2009-06-12'));
+
+            return { recent, history };
         }
 
         function getDataPoint(ticker, date) {
             const arr = dataByTicker[ticker];
             if(!arr) return null;
             const dTime = date.getTime();
-            return arr.find(d => d.date.getTime() === dTime);
+            return arr.find(d => d.date.getTime() === dTime) || null;
         }
-
+        
         function getPrevDataPoint(ticker, date) {
             const arr = dataByTicker[ticker];
             if(!arr) return null;
@@ -529,185 +725,324 @@
             return null;
         }
 
-        function formatPrice(ticker, price) {
-            if (price == null) return '-';
+        function formatDisplayDate(date) {
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            const yy = String(date.getFullYear()).slice(-2);
+            return `${m}/${d}/'${yy}`;
+        }
+
+        function calculateDecimalRules(allDates) {
+            COLUMN_CONFIG.forEach((col, idx) => {
+                if(col.type === 'separator' || col.type === 'calc' || col.type === 'fx' || col.type === 'volume') return;
+                
+                let maxP = 0;
+                allDates.forEach(d => {
+                    const pt = getDataPoint(col.id, d);
+                    if(pt && pt.price > maxP) maxP = pt.price;
+                });
+
+                if((col.id.endsWith('.TW') || col.id.endsWith('.TWO')) && !col.id.startsWith('.')) {
+                    if (maxP >= 1000) columnDecimalRules[idx] = 0;
+                    else if (maxP >= 100) columnDecimalRules[idx] = 1;
+                    else columnDecimalRules[idx] = 2;
+                } else if (col.id === '.MCI') {
+                    columnDecimalRules[idx] = 2;
+                } else {
+                    columnDecimalRules[idx] = 2;
+                }
+            });
+        }
+
+        function formatVal(col, pt, colIdx) {
+            if(!pt) return { text: '', html: '' };
             
-            // Japan (.T) and Korea (.KS) stocks: No decimals
-            if (ticker.endsWith('.T') || ticker.endsWith('.KS')) {
-                 return price.toLocaleString('en-US', { maximumFractionDigits: 0 });
+            if(col.type === 'volume') {
+                const v = pt.volume / 1000;
+                const txt = v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                return { text: txt, html: txt };
+            }
+            if(col.type === 'fx') {
+                const txt = pt.price.toFixed(2);
+                return { text: txt, html: txt };
+            }
+            
+            const price = pt.price;
+            
+            let decimals = col.fixedDecimals; 
+            if (decimals === undefined) {
+                 if(col.id.endsWith('.T') || col.id.endsWith('.KS')) {
+                     decimals = 0;
+                 } else {
+                     decimals = columnDecimalRules[colIdx];
+                     if(decimals === undefined) decimals = 2;
+                 }
             }
 
-            // Taiwan Stocks Formatting
-            const isTWStock = (ticker.endsWith('.TW') || ticker.endsWith('.TWO')) && !ticker.startsWith('.'); 
-            
-            let valStr = '';
-            if (isTWStock) {
-                if (price < 50) valStr = price.toFixed(2);
-                else if (price < 500) valStr = price.toFixed(1);
-                else valStr = price.toFixed(0);
-            } else {
-                valStr = price.toFixed(2);
-            }
-            
-            const parts = valStr.split('.');
-            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-            return parts.join('.');
+            const txt = price.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            return { text: txt, html: txt };
         }
-        
-        // Auto fit table to viewport width
-        function autoFitTable() {
-            const wrapper = document.getElementById('mc-wrapper');
-            const container = document.querySelector('.mc-container');
-            if(!wrapper || !container) return;
+
+        function getPremium(date) {
+            const tsm = getDataPoint('TSM', date);
+            const tw = getDataPoint('2330.TW', date);
+            let fx = getDataPoint('TWD=', date) || getDataPoint('TWD=X', date);
             
-            // Reset scale first to get true width
-            wrapper.style.transform = 'scale(1)';
+            const hasTSM = (tsm && tsm.price > 0);
+            const hasTW = (tw && tw.price > 0);
             
-            const contentWidth = wrapper.scrollWidth;
-            const containerWidth = container.clientWidth;
+            if (!hasTSM && !hasTW) return { text: '', html: '' }; 
+            if (!hasTSM || !hasTW) return { text: 'N/A', html: 'N/A' }; 
+            if (!fx || fx.price === 0) return { text: 'N/A', html: 'N/A' }; 
+
+            const adrVal = tsm.price / 5;
+            const twValUSD = tw.price / fx.price;
+            const premium = (adrVal / twValUSD) - 1;
+            const txt = (premium * 100).toFixed(1) + '%';
             
-            // Calculate scale needed to fit
-            // We add a small buffer to ensure no scrollbars
-            let scale = containerWidth / (contentWidth + 20); 
+            return { text: txt, html: txt };
+        }
+
+        // --- Config Modal Logic ---
+        function openConfig() {
+            const list = document.getElementById('config-list');
+            list.innerHTML = '';
             
-            if (scale > 1.2) scale = 1.2; // Cap max zoom
-            if (scale < 0.1) scale = 0.1; // Safety floor
+            COLUMN_CONFIG.forEach((col, idx) => {
+                if(col.type === 'separator') return;
+                
+                const div = document.createElement('div');
+                div.className = 'config-row';
+                
+                div.innerHTML = `<span style="font-size:0.8rem; color:#999; margin-right:5px; width:20px;">${idx+1}</span>`;
+                div.innerHTML += `<input type="text" value="${col.id}" id="cfg-id-${idx}" style="width:100px;" placeholder="Ticker ID">`;
+                div.innerHTML += `<input type="text" placeholder="Name" value="${col.name}" id="cfg-name-${idx}" style="width:100px;">`;
+                div.innerHTML += `<input type="text" placeholder="SubLabel" value="${col.subLabel || ''}" id="cfg-sub-${idx}" style="width:120px;">`;
+
+                if(col.type !== 'volume' && col.type !== 'calc') {
+                    div.innerHTML += `<input type="number" placeholder="Dec" value="${col.fixedDecimals !== undefined ? col.fixedDecimals : ''}" id="cfg-dec-${idx}" style="width:50px;">`;
+                }
+                
+                list.appendChild(div);
+            });
             
-            zoomLevel = scale;
-            wrapper.style.transform = `scale(${zoomLevel})`;
+            document.getElementById('config-modal').style.display = 'flex';
+        }
+
+        function closeConfig() {
+            COLUMN_CONFIG.forEach((col, idx) => {
+                if(col.type === 'separator') return;
+                
+                const idIn = document.getElementById(`cfg-id-${idx}`);
+                const nameIn = document.getElementById(`cfg-name-${idx}`);
+                const subIn = document.getElementById(`cfg-sub-${idx}`);
+                const decIn = document.getElementById(`cfg-dec-${idx}`);
+                
+                if(idIn) col.id = idIn.value;
+                if(nameIn) col.name = nameIn.value;
+                if(subIn) col.subLabel = subIn.value;
+                if(decIn) {
+                    const val = decIn.value;
+                    if(val === '') delete col.fixedDecimals;
+                    else col.fixedDecimals = parseInt(val);
+                }
+            });
+            
+            document.getElementById('config-modal').style.display = 'none';
+            renderTable();
         }
 
         // --- Rendering ---
-
-        function renderMarketCapTable() {
+        function renderTable() {
             const container = document.getElementById('mc-grid');
             container.innerHTML = '';
             
             const dateInput = document.getElementById('mc-as-of-date').value;
-            const daysCount = parseInt(document.getElementById('setting-days').value) || 20;
-            
             const anchor = dateInput ? new Date(dateInput) : summaryReferenceDate;
-            const dates = getRecentTradingDays(anchor, daysCount);
+            const { recent, history } = getTableDates(anchor);
+            const allDates = [...recent, ...history];
 
-            if(dates.length === 0) {
-                container.innerHTML = '<p>No data found for selected date.</p>';
-                return;
+            calculateDecimalRules(allDates);
+
+            const block = document.createElement('div');
+            block.className = 'mc-block';
+            let html = `<table class="mc-table">`;
+            
+            // Row 1: Group Headers
+            html += `<tr class="header-group-row">`;
+            
+            let groups = [];
+            let currentGroup = null;
+            
+            if(COLUMN_CONFIG[0].group === 'TAIEX') {
+                 currentGroup = { name: 'TAIEX', span: 1 }; 
+            } else {
+                 html += `<th></th>`; 
+                 currentGroup = null;
             }
 
-            marketGroups.forEach((group, gIdx) => {
-                const block = document.createElement('div');
-                block.className = 'mc-block';
-                
-                let html = `<div class="mc-block-title" contenteditable="true">${group.title}</div>`;
-                html += `<table class="mc-table"><thead><tr>`;
-                
-                // Date Header
-                html += `<th class="mc-col-date">Date</th>`;
-
-                // Ticker Headers
-                for(let i=0; i<15; i++) {
-                    const t = group.tickers[i];
-                    const val = t || '';
-                    const name = t ? (TICKER_NAMES[t] || t) : '';
-                    const display = name; // Use Name for display
-
-                    html += `<th class="mc-col-ticker">
-                        <input class="header-editable" list="ticker-options" 
-                               value="${display}" 
-                               onchange="updateTickerNameInput(${gIdx}, ${i}, this.value)" 
-                               title="${t || ''}"
-                               placeholder="Ticker">
-                    </th>`;
-                }
-                html += `</tr></thead><tbody>`;
-
-                // Rows (Dates)
-                dates.forEach(date => {
-                    const y = date.getFullYear();
-                    const m = String(date.getMonth() + 1).padStart(2, '0');
-                    const d = String(date.getDate()).padStart(2, '0');
-                    const dateStr = `${y}/${m}/${d}`;
-                    
-                    html += `<tr>`;
-                    html += `<td class="mc-col-date">${dateStr}</td>`;
-                    
-                    for(let i=0; i<15; i++) {
-                        const t = group.tickers[i];
-                        if(!t) {
-                            html += `<td class="mc-col-ticker"></td>`;
-                            continue;
+            COLUMN_CONFIG.forEach(col => {
+                if(col.type === 'separator') {
+                     if(currentGroup) groups.push(currentGroup);
+                     groups.push({ type: 'separator' });
+                     currentGroup = null;
+                } else {
+                    if(col.isMergedHelper) {
+                        if(currentGroup) currentGroup.span++;
+                    } else {
+                        if(!currentGroup || currentGroup.name !== col.group) {
+                            if(currentGroup) groups.push(currentGroup);
+                            currentGroup = { name: col.group, span: 0 };
                         }
+                        currentGroup.span++;
+                    }
+                }
+            });
+            if(currentGroup) groups.push(currentGroup);
+            
+            groups.forEach(g => {
+                if(g.type === 'separator') {
+                    html += `<th class="col-separator"></th>`;
+                } else {
+                    html += `<th colspan="${g.span}">${g.name}</th>`;
+                }
+            });
+            html += `</tr>`;
 
-                        const curr = getDataPoint(t, date);
-                        const prev = getPrevDataPoint(t, date);
+            // Row 2: Name Headers
+            html += `<tr class="header-name-row"><th class="col-date"></th>`;
+            COLUMN_CONFIG.forEach((col, idx) => {
+                if(col.type === 'separator') {
+                    html += `<th class="col-separator"></th>`;
+                } else if (col.name === 'TSMC' && col.subLabel === 'Close') {
+                     html += `<th class="col-data" colspan="2">TSMC</th>`;
+                } else if (col.isMergedHelper) {
+                     // Skip
+                } else {
+                    html += `<th class="col-data">${col.name}</th>`;
+                }
+            });
+            html += `</tr>`;
+
+            // Row 3: Sub Labels
+            html += `<tr class="header-sub-row"><th class="col-date">Date</th>`;
+            COLUMN_CONFIG.forEach(col => {
+                if(col.type === 'separator') {
+                    html += `<th class="col-separator"></th>`;
+                } else {
+                    const cls = col.subLabelClass || '';
+                    html += `<th class="col-data ${cls}">${col.subLabel || ''}</th>`;
+                }
+            });
+            html += `</tr>`;
+            
+            // Data Rows
+            const renderRow = (date, isRecent) => {
+                // Convert row date to YYYY-MM-DD string for event lookup
+                const rowDateStr = date.toISOString().split('T')[0];
+
+                let rowHtml = `<tr>`;
+                rowHtml += `<td class="col-date">${formatDisplayDate(date)}</td>`;
+                
+                COLUMN_CONFIG.forEach((col, colIdx) => {
+                    if(col.type === 'separator') {
+                        rowHtml += `<td class="col-separator"></td>`;
+                        return;
+                    }
+
+                    let display = { text: '', html: '' };
+                    let symbolHtml = '';
+                    let isDividendDay = false;
+
+                    const events = findEventsForTicker(col.id);
+                    if(events && events.events) {
+                         const divEv = events.events.find(e => e.type === 'dividend' && e.date === rowDateStr);
+                         if(divEv) isDividendDay = true;
+                    }
+                    
+                    if(col.id === 'PREMIUM') {
+                        display = getPremium(date);
+                    } else {
+                        let key = col.id;
+                        if(key === 'TWD=' && !dataByTicker['TWD=']) key = 'TWD=X';
                         
-                        let displayVal = '-';
-                        let symbol = '<span class="triangle-placeholder"></span>'; // Default empty placeholder for alignment
-                        let divMark = '';
+                        const pt = getDataPoint(key, date);
+                        display = formatVal(col, pt, colIdx);
                         
-                        if(curr) {
-                            displayVal = formatPrice(t, curr.price);
-                            
-                            if(prev) {
-                                if(curr.price > prev.price) symbol = '<span class="triangle-up">△</span>'; 
-                                else if(curr.price < prev.price) symbol = '<span class="triangle-down">▽</span>'; 
+                        if(pt && !col.noArrow) {
+                            const prevPt = getPrevDataPoint(key, date);
+                            if(prevPt) {
+                                const changePct = (pt.price / prevPt.price) - 1;
                                 
-                                const pRet = (curr.price / prev.price) - 1;
-                                const tRet = (curr.tri / prev.tri) - 1;
-                                if(Math.abs(pRet - tRet) > 0.001) {
-                                    divMark = '<span class="dividend-mark" title="Dividend/Split Event">*</span>';
+                                if(changePct > 0) {
+                                    if(Math.abs(changePct) > 0.098 && (col.id.endsWith('.TW') || col.id.endsWith('.TWO'))) {
+                                        symbolHtml = '<span class="limit-up">▲</span>'; 
+                                    } else if (isDividendDay) {
+                                        symbolHtml = '<span class="ex-div-up">△</span><span class="ex-div-up star-mark">☆</span>';
+                                    } else {
+                                        symbolHtml = '<span class="triangle-up">△</span>';
+                                    }
+                                } else if (changePct < 0) {
+                                    if(Math.abs(changePct) > 0.098 && (col.id.endsWith('.TW') || col.id.endsWith('.TWO'))) {
+                                        symbolHtml = '<span class="limit-down">▼</span>';
+                                    } else if (isDividendDay) {
+                                        symbolHtml = '<span class="ex-div-down">▽</span><span class="ex-div-down star-mark">☆</span>';
+                                    } else {
+                                        symbolHtml = '<span class="triangle-down">▽</span>';
+                                    }
                                 }
                             }
                         }
-                        
-                        html += `<td class="mc-col-ticker">
-                            <div style="display:flex; justify-content:center; align-items:center;">
-                                <div contenteditable="true" class="cell-editable">${displayVal}</div>
-                                ${symbol}${divMark}
+                    }
+                    
+                    if(col.noArrow) symbolHtml = '';
+
+                    if(display.text === '' || display.text === '-') {
+                        if(col.id === '.MCI' || col.id === 'PREMIUM') {
+                             rowHtml += `<td><div class="cell-missing-dash">${display.html || '-'}</div></td>`;
+                        } else if(isRecent) {
+                            rowHtml += `<td><div class="cell-missing-recent">Close</div></td>`;
+                        } else {
+                            rowHtml += `<td></td>`; 
+                        }
+                    } else {
+                        rowHtml += `<td>
+                            <div class="cell-content">
+                                <div class="cell-editable" contenteditable="true">${display.html}</div>
+                                <div class="indicator-box">${symbolHtml}</div>
                             </div>
                         </td>`;
                     }
-                    html += `</tr>`;
                 });
+                rowHtml += `</tr>`;
+                return rowHtml;
+            };
 
-                html += `</tbody></table>`;
-                block.innerHTML = html;
-                container.appendChild(block);
+            recent.forEach(d => {
+                html += renderRow(d, true);
             });
-            
-            // Re-calculate fit after render
-            autoFitTable();
-        }
 
-        // --- Interaction ---
+            html += `<tr class="separator-row"><td colspan="${COLUMN_CONFIG.length + 5}"></td></tr>`;
 
-        function updateTickerNameInput(gIdx, tIdx, val) {
-            // User might type Name or Ticker.
-            // Try to find Ticker from Name first
-            let foundTicker = null;
-            
-            // Exact match Ticker
-            if(dataByTicker[val]) foundTicker = val;
-            else {
-                // Find by Name in TICKER_NAMES
-                const entry = Object.entries(TICKER_NAMES).find(([k, v]) => v === val || `${v} (${k})` === val);
-                if(entry) foundTicker = entry[0];
-            }
+            history.forEach(d => {
+                html += renderRow(d, false);
+            });
 
-            if(foundTicker) {
-                marketGroups[gIdx].tickers[tIdx] = foundTicker;
-                renderMarketCapTable();
-            } else if (val === "") {
-                marketGroups[gIdx].tickers[tIdx] = "";
-                renderMarketCapTable();
-            }
+            html += `</table>`;
+            block.innerHTML = html;
+            container.appendChild(block);
         }
 
         function zoomTable(delta) {
             zoomLevel += delta;
-            if(zoomLevel < 0.1) zoomLevel = 0.1;
-            if(zoomLevel > 1.5) zoomLevel = 1.5;
-            document.getElementById('mc-wrapper').style.transform = `scale(${zoomLevel})`;
+            if(zoomLevel < 0.2) zoomLevel = 0.2;
+            if(zoomLevel > 2.0) zoomLevel = 2.0;
+            applyZoom();
+        }
+        
+        function applyZoom() {
+            const wrapper = document.getElementById('mc-wrapper');
+            if(wrapper) wrapper.style.transform = `scale(${zoomLevel})`;
         }
     </script>
 </body>
