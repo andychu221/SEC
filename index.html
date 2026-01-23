@@ -139,7 +139,7 @@
             color: var(--text-dark-blue);
             font-style: italic;
             font-weight: normal;
-            font-size: 1.2rem; /* Increased size */
+            font-size: 1.2rem;
             padding: 8px 0;
             border-top: 1px solid #ffffff;
             border-left: 1px solid #ffffff;
@@ -174,9 +174,7 @@
         /* WIDER Separator between Index and Close */
         .header-meta-row th.border-right-white { border-right: 12px solid white !important; }
         
-        /* Adjusted TSMC Header Size to match Closing */
         .tsmc-header-big { font-size: 1.1rem !important; }
-        
         .meta-small { font-size: 0.9rem !important; vertical-align: bottom; font-weight: bold; }
 
         /* Row 3: Name + Note (Merged) */
@@ -225,9 +223,9 @@
         /* Data Columns */
         .col-date { 
             width: 85px; min-width: 85px; 
-            color: #000; 
-            font-weight: normal; /* Not Bold */
-            font-style: normal; /* Not Italic */
+            color: #000 !important; 
+            font-weight: normal !important; /* Force Not Bold */
+            font-style: normal !important; /* Force Not Italic */
             text-align: center; background: #fff; 
         }
         .col-data { width: 80px; min-width: 80px; } 
@@ -652,15 +650,21 @@
             return { events: [] };
         }
 
+        function getPriceOnDate(ticker, dateObj) {
+            const data = dataByTicker[ticker];
+            if(!data) return null;
+            const targetTime = dateObj.getTime();
+            const pt = data.find(d => d.date.getTime() === targetTime);
+            if(pt) return pt.price;
+            return null;
+        }
+        
         function getPrevCloseForDate(ticker, dateObj) {
             const data = dataByTicker[ticker];
             if(!data) return null;
             const targetTime = dateObj.getTime();
             const idx = data.findIndex(d => d.date.getTime() >= targetTime);
-            if(idx > 0) {
-                return data[idx-1].price;
-            }
-            if(idx === -1 && data.length > 0) return data[data.length-1].price;
+            if(idx > 0) return data[idx-1].price;
             return null;
         }
 
@@ -681,7 +685,6 @@
                     const yy = String(d.getFullYear()).slice(-2);
                     
                     const prevClose = getPrevCloseForDate('2330.TW', d);
-                    // Div Ref Price = Prev Close - Div Amount
                     const exRef = prevClose ? (prevClose - ev.amount).toFixed(1) : '-';
                     
                     twInfo = `TSMC ex-dividend date ${m}/${day}/'${yy} (Ex-Div Ref NT$ ${exRef})`;
@@ -935,16 +938,14 @@ ${splitInfoStr}`;
         
         // --- PDF Generation ---
         function openPDF() {
-            // Clone the element to modify styles for PDF
             const originalElement = document.getElementById('market-cap-tab');
             const clone = originalElement.cloneNode(true);
             
-            // Apply PDF-specific styles to clone
-            clone.style.width = '1600px'; // Force wide width for table
+            // Expand width for PDF
+            clone.style.width = '1600px'; 
             clone.style.transform = 'scale(0.65)'; 
             clone.style.transformOrigin = 'top left';
             
-            // Create a hidden container for generation
             const container = document.createElement('div');
             container.style.position = 'absolute';
             container.style.top = '-9999px';
@@ -964,7 +965,6 @@ ${splitInfoStr}`;
                 pdfBlobUrl = pdf.output('bloburl');
                 document.getElementById('pdf-frame').src = pdfBlobUrl;
                 document.getElementById('pdf-preview-modal').style.display = 'flex';
-                // Clean up
                 document.body.removeChild(container);
             });
         }
@@ -1070,7 +1070,7 @@ ${splitInfoStr}`;
                             if(COLUMN_CONFIG[k].group === col.group && COLUMN_CONFIG[k].type !== 'separator') span++;
                             else break;
                         }
-                        html += `<th class="col-data text-blue-italic border-bottom-thick" colspan="${span}">${col.meta}</th>`;
+                        html += `<th class="col-data text-blue-italic border-bottom-thick" colspan="${span}">Closing</th>`;
                         i += (span - 1);
                     }
                 }
@@ -1085,7 +1085,7 @@ ${splitInfoStr}`;
                 } else {
                     let content = col.name; 
                     if(col.noteId) content += `<sup>(${col.noteId})</sup>`;
-                    // Ensure spacing for superscripts even if no noteId to align height
+                    // Ensure spacing for superscripts even if no noteId
                     if(!col.noteId) content += `<sup>&nbsp;</sup>`;
                     
                     if(col.note) {
