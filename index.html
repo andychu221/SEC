@@ -11,9 +11,6 @@
     <!-- SheetJS for .xlsx export -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
-    <!-- html2pdf for PDF Generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
     <!-- Material Icons -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons" />
     
@@ -304,137 +301,79 @@
         }
         .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
 
-        /* PDF Preview Modal */
-        #pdf-preview-modal .modal-content { width: 90vw; height: 90vh; display: flex; flex-direction: column; padding: 0; }
-        #pdf-frame { flex-grow: 1; width: 100%; border: none; }
-        .pdf-toolbar { padding: 10px; background: #eee; display: flex; justify-content: flex-end; gap: 10px; border-bottom: 1px solid #ccc; }
-
         /* ========================================= */
-        /* PDF Styles - Applied to clone only        */
+        /* Print Styles - FIXED: Natural Size        */
         /* ========================================= */
-        .pdf-mode {
-            background: white !important;
-            padding: 20px !important;
-            margin: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-            width: fit-content !important; 
-            min-width: 100%;
-            height: auto !important; 
-            min-height: 0 !important;
-            margin-left: 0 !important; 
-            transform: none !important;
-            zoom: 1 !important; /* Reset any user zoom */
-        }
-        .pdf-mode .mc-wrapper {
-            width: auto !important;
-            overflow: visible !important;
-            transform: none !important;
-            zoom: 1 !important;
-        }
-        .pdf-mode .mc-table {
-            width: auto !important; /* Let table dictate width */
-            margin: 0 !important;
-            border-collapse: separate !important; 
-            border-spacing: 0 !important;
-            table-layout: fixed !important; /* Force fixed layout */
-        }
-        
-        /* [ADJUSTED] Table Cells in PDF */
-        .pdf-mode .mc-table th, .pdf-mode .mc-table td {
-            /* Fix 1: Optimized padding */
-            padding: 0 4px !important; 
-            /* Fix 2: Optimized font size */
-            font-size: 0.85rem !important; 
-            /* Fix 3: Strict height enforcement to prevent jumping rows */
-            height: 24px !important; 
-            max-height: 24px !important;
-            line-height: 24px !important; 
-            /* Fix 4: Force no wrap to prevent expansion */
-            white-space: nowrap !important; 
-            overflow: hidden !important; 
-            vertical-align: middle !important; 
-            box-sizing: border-box !important;
-        }
-        
-        /* Ensure cell content aligns nicely within the strict height */
-        .pdf-mode .cell-content {
-            height: 24px !important;
-            max-height: 24px !important;
-            display: flex !important;
-            align-items: center !important;
-            overflow: hidden !important;
-            white-space: nowrap !important;
-        }
-
-        /* Fix for headers */
-        .pdf-mode .header-title-row th,
-        .pdf-mode .header-group-row th,
-        .pdf-mode .header-name-row th {
-            height: auto !important;
-            max-height: none !important;
-            white-space: normal !important;
-            overflow: visible !important;
-        }
-
-        .pdf-mode .header-title-row th { font-size: 1.6rem !important; padding-bottom: 5px !important; }
-        .pdf-mode .header-group-row th { font-size: 1.2rem !important; padding: 6px 0 !important; }
-        .pdf-mode .header-name-row th { 
-            height: 38px !important; 
-            line-height: 1.1 !important; 
-            vertical-align: bottom !important;
-        }
-        
-        .pdf-mode tr {
-            page-break-inside: avoid;
-            height: auto !important;
-        }
-        
-        /* Separator Row Height Fix */
-        .pdf-mode .separator-row td {
-            height: 1px !important;
-            line-height: 0 !important;
-            font-size: 0 !important;
-            padding: 0 !important;
-            border-bottom: 1px solid #999 !important;
-            overflow: hidden !important;
-        }
-
-        /* [FIX 1] Reduced Separator Width from 12px to 6px to prevent cutoff */
-        .pdf-mode .col-separator { 
-            width: 6px !important; 
-            min-width: 6px !important; 
-            max-width: 6px !important;
-            padding: 0 !important;
-            border: none !important;
-        }
-        
-        /* [FIX 1] Slightly reduced min-width to fit A4 */
-        .pdf-mode .col-data { min-width: 58px !important; }
-        .pdf-mode .col-date { min-width: 75px !important; }
-        
-        /* [FIX 4] Footnote: Increased font size */
-        .pdf-mode #footnote-area { 
-            margin-top: 15px !important; 
-            padding-bottom: 0 !important;
-            font-size: 0.9rem !important; 
-            line-height: 1.25 !important;
-            border-top: 1px solid #000 !important;
-            white-space: pre-wrap !important; 
-            display: block !important;
-            height: auto !important;
-            width: 100% !important;
-            overflow: visible !important;
-        }
-        /* Hide UI elements in PDF */
-        .pdf-mode .mc-header, .pdf-mode .mc-settings-left, .pdf-mode .mc-settings-right { display: none !important; }
-
         @media print {
-            @page { size: landscape; margin: 5mm; }
-            body { background: white; margin: 0; padding: 0; }
-            .container { max-width: none; width: 100%; margin: 0; padding: 0; display: block; }
-            .header-bar, .mc-header, #loading-overlay, .modal-overlay { display: none !important; }
-            .main-content, .mc-container { box-shadow: none; padding: 0; margin: 0; border: none; width: 100%; }
+            /* Removed forced @page settings to allow user control (Normal Printing) */
+            
+            body { 
+                background: white !important; 
+                margin: 0 !important; 
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+
+            /* Hide all UI elements */
+            .mc-header, 
+            #loading-overlay, 
+            .modal-overlay, 
+            .controls-input,
+            button { 
+                display: none !important; 
+            }
+
+            .container { 
+                max-width: none !important; 
+                width: 100% !important; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                display: block !important; 
+            }
+
+            .main-content, .mc-container { 
+                box-shadow: none !important; 
+                padding: 0 !important; 
+                margin: 0 !important; 
+                border: none !important; 
+                width: 100% !important; 
+                background: white !important;
+            }
+
+            #mc-wrapper {
+                zoom: 1 !important; 
+                width: auto !important; /* Allow natural width */
+                transform: none !important;
+                display: block !important;
+                overflow: visible !important;
+            }
+
+            .mc-table {
+                width: max-content !important; /* Allow natural expansion */
+                table-layout: auto !important; /* Allow columns to size naturally */
+            }
+
+            /* Optimize content size for Print - Use Normal Screen Sizes (No Compression) */
+            .mc-table th, .mc-table td {
+                color: #000 !important;
+                /* Inherit natural sizes */
+            }
+
+            /* Header specific adjustments - Ensure black color for print but keep sizes */
+            .header-title-row th { color: #000 !important; }
+            .header-group-row th { color: #000 !important; background-color: var(--group-header-bg) !important; }
+            .header-meta-row th { color: #000 !important; }
+            .header-name-row th { color: #000 !important; }
+            .header-note { display: block !important; }
+            
+            #footnote-area {
+                border-top: 1px solid #000 !important;
+                color: #000 !important;
+                margin-top: 10px !important;
+            }
         }
     </style>
 </head>
@@ -463,18 +402,6 @@
         </div>
     </div>
 
-    <!-- PDF Preview Modal -->
-    <div id="pdf-preview-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="pdf-toolbar">
-                <button onclick="downloadPDF()" class="controls-input" style="background:#4a90e2; color:white; border:none;">Download</button>
-                <button onclick="printPDF()" class="controls-input">Print</button>
-                <button onclick="closePDF()" class="controls-input">Close</button>
-            </div>
-            <iframe id="pdf-frame"></iframe>
-        </div>
-    </div>
-
     <div class="container">
         <div class="main-content">
             <div id="market-cap-tab">
@@ -488,7 +415,7 @@
                     <div class="mc-settings-right">
                         <button class="controls-input" onclick="zoomTable(0.05)" style="width:40px; text-align:center;"><i class="material-icons" style="font-size:16px;">add</i></button>
                         <button class="controls-input" onclick="zoomTable(-0.05)" style="width:40px; text-align:center;"><i class="material-icons" style="font-size:16px;">remove</i></button>
-                        <button class="controls-input" onclick="openPDF()" style="width:auto;"><i class="material-icons" style="font-size:16px; vertical-align:text-bottom;">picture_as_pdf</i> PDF</button>
+                        <button class="controls-input" onclick="openPDF()" style="width:auto;"><i class="material-icons" style="font-size:16px; vertical-align:text-bottom;">print</i> Print / PDF</button>
                     </div>
                 </div>
 
@@ -1016,109 +943,11 @@ ${splitInfoStr}`;
             renderTable();
         }
         
-        // --- PDF Generation (Optimized for One Page Fit) ---
+        // --- PDF / Print Functionality (Native Print) ---
         function openPDF() {
-            // Logic to Fit One Page A4 Landscape perfectly
-            const originalElement = document.getElementById('market-cap-tab');
-            const clone = originalElement.cloneNode(true);
-            
-            // Apply PDF-specific optimizations to the clone
-            clone.id = "pdf-clone-content";
-            clone.classList.add('pdf-mode');
-            
-            // Fix: Reset transform/zoom on the wrapper inside the clone
-            const wrapper = clone.querySelector('#mc-wrapper');
-            if(wrapper) {
-                wrapper.style.transform = 'none';
-                wrapper.style.zoom = '1';
-                wrapper.style.width = '100%';
-            }
-
-            // Remove controls from clone
-            const controls = clone.querySelector('.mc-header');
-            if(controls) controls.style.display = 'none';
-            
-            // Create a temporary container - keep it visible but positioned off-screen
-            const container = document.createElement('div');
-            container.style.position = 'absolute';
-            container.style.top = '-10000px'; 
-            container.style.left = '0';
-            // Allow container to fit the content naturally first
-            container.style.width = 'fit-content';
-            container.style.visibility = 'hidden';
-            
-            container.appendChild(clone);
-            document.body.appendChild(container);
-
-            // Wait for DOM to calculate widths
-            setTimeout(() => {
-                // Find the table inside the clone to get exact dimensions
-                const table = clone.querySelector('.mc-table');
-                // Use the table's actual rendered width (scrolling width)
-                // This ensures we capture the FULL table width, preventing whitespace if container was wider
-                // or preventing clipping if container was narrower.
-                const tableWidth = table ? table.scrollWidth : clone.scrollWidth;
-                const tableHeight = clone.scrollHeight;
-                
-                // Add a small buffer only for borders
-                const finalWidth = tableWidth + 50; 
-                const finalHeight = tableHeight + 5; // Reduced buffer for footer
-
-                const opt = {
-                    margin: [5, 5, 5, 5], // Reduced margins
-                    filename: 'Stock_Price_Monitor.pdf',
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { 
-                        scale: 2, 
-                        useCORS: true,
-                        scrollY: 0,
-                        scrollX: 0,
-                        // STRICTLY set the canvas size to the content size
-                        windowWidth: finalWidth, 
-                        windowHeight: finalHeight,
-                        width: finalWidth,
-                        height: finalHeight
-                    },
-                    jsPDF: { 
-                        unit: 'mm', 
-                        format: 'a4', 
-                        orientation: 'landscape',
-                        compress: true
-                    },
-                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-                };
-                
-                // Direct html2pdf usage
-                html2pdf().set(opt).from(clone).toPdf().get('pdf').then(function(pdf) {
-                    pdfBlobUrl = pdf.output('bloburl');
-                    document.getElementById('pdf-frame').src = pdfBlobUrl;
-                    document.getElementById('pdf-preview-modal').style.display = 'flex';
-                    document.body.removeChild(container);
-                }).catch(err => {
-                    console.error("PDF Generation Error:", err);
-                    alert("PDF Generation failed. Please try again.");
-                    if(document.body.contains(container)) document.body.removeChild(container);
-                });
-            }, 300);
-        }
-
-        function downloadPDF() {
-            if(!pdfBlobUrl) return;
-            const link = document.createElement('a');
-            link.href = pdfBlobUrl;
-            link.download = "Stock_Price_Monitor.pdf";
-            link.click();
-        }
-
-        function printPDF() {
-            const iframe = document.getElementById('pdf-frame');
-            if (iframe.contentWindow) {
-                iframe.contentWindow.print();
-            }
-        }
-
-        function closePDF() {
-            document.getElementById('pdf-preview-modal').style.display = 'none';
+            // Trigger native browser print which supports Save to PDF
+            // CSS @media print handles the layout and landscape orientation
+            window.print();
         }
 
         // --- Rendering ---
