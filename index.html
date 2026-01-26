@@ -113,7 +113,7 @@
         .mc-table {
             border-collapse: separate; 
             border-spacing: 0;
-            font-size: 1rem; 
+            font-size: 1.1rem; 
             table-layout: fixed; 
             width: max-content; 
         }
@@ -121,8 +121,8 @@
             padding: 0 4px; 
             text-align: center; 
             white-space: nowrap;
-            height: 28px;
-            line-height: 28px;
+            height: 30px;
+            line-height: 30px;
             border: none !important; 
         }
         
@@ -140,7 +140,7 @@
             font-size: 2.4rem;
             color: var(--text-dark-blue);
             background: #fff;
-            padding: 5px 0 10px 0;
+            padding: 5px 0 15px 0;
             font-weight: bold; 
             font-style: italic;
             position: relative; 
@@ -193,7 +193,7 @@
             padding-bottom: 4px;
             color: var(--text-dark-blue);
             font-style: italic;
-            font-weight: bold; 
+            font-weight: nornal; 
             border-bottom: var(--header-border-thick) !important;
             vertical-align: top;
             white-space: normal; 
@@ -565,6 +565,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadData();
             if(window.innerWidth < 1600) zoomLevel = 0.85;
+            lse zoomLevel = 1.1;
             applyZoom();
         });
 
