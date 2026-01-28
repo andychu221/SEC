@@ -306,16 +306,20 @@
         /* ========================================= */
         @media print {
             /* Removed forced @page settings to allow user control (Normal Printing) */
-            
-            body { 
-                background: white !important; 
-                margin: 0 !important; 
-                padding: 0 !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                height: auto !important;
-                overflow: visible !important;
-            }
+            @page {
+        		size: landscape;
+        		margin: 0.5cm;
+    		}
+body { 
+    background: white !important; 
+    margin: 0 !important; 
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    height: auto !important;
+    overflow: visible !important;
+}
 
             /* Hide all UI elements */
             .mc-header, 
@@ -357,23 +361,66 @@
             }
 
             /* Optimize content size for Print - Use Normal Screen Sizes (No Compression) */
-            .mc-table th, .mc-table td {
-                color: #000 !important;
-                /* Inherit natural sizes */
-            }
+.mc-table th, .mc-table td {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+}
 
             /* Header specific adjustments - Ensure black color for print but keep sizes */
-            .header-title-row th { color: #000 !important; }
-            .header-group-row th { color: #000 !important; background-color: var(--group-header-bg) !important; }
-            .header-meta-row th { color: #000 !important; }
-            .header-name-row th { color: #000 !important; }
-            .header-note { display: block !important; }
+.header-title-row th { 
+    color: #00008B !important; 
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
+.header-group-row th { 
+    color: #00008B !important; 
+    background-color: #E0FFFF !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
+.header-meta-row th { 
+    color: #00008B !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
+.header-name-row th { 
+    color: #00008B !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
+.text-blue-italic {
+    color: #00008B !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
+.date-header {
+    color: #00008B !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
+.header-note { 
+    display: block !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
             
             #footnote-area {
                 border-top: 1px solid #000 !important;
-                color: #000 !important;
-                margin-top: 10px !important;
+    			color: #000 !important;
+    			margin-top: 10px !important;
+    			page-break-inside: avoid !important;
+    			page-break-after: avoid !important;
             }
+html, body {
+    height: auto !important;
+}
         }
     </style>
 </head>
@@ -694,7 +741,7 @@
                     const prevClose = getPrevCloseForDate('2330.TW', d);
                     const exRef = prevClose ? (prevClose - ev.amount).toFixed(1) : '-';
                     
-                    twInfo = `TSMC ex-dividend date ${m}/${day}/'${yy} (Ex-Div Ref NT$ ${exRef})`;
+                    twInfo = `TSMC ex-dividend date ${m}/${day}/'${yy}, Ref Price NT$ ${exRef}`;
                 }
             }
             
@@ -707,7 +754,7 @@
                     const prevClose = getPrevCloseForDate('TSM', d);
                     const exRef = prevClose ? (prevClose - ev.amount).toFixed(2) : '-';
                     
-                    usInfo = `TSM (Ex-Div Ref US$ ${exRef})`;
+                    usInfo = `TSM Ref Price US$ ${exRef}`;
                 }
             }
             
@@ -738,7 +785,13 @@
             tickersToCheck.forEach(tid => {
                 const events = findEventsForTicker(tid);
                 if(events && events.events) {
-                    const splits = events.events.filter(e => e.type === 'split' && new Date(e.date).getTime() >= START_STATS_DATE);
+                    const splits = events.events.filter(e => {
+    					if (e.type !== 'split') return false;
+    					if (new Date(e.date).getTime() < START_STATS_DATE) return false;
+    					// Filter: only include splits with ratio >= 2:1
+    					const ratio = e.numerator / e.denominator;
+    					return ratio >= 2.0;
+					});
                     splits.sort((a, b) => new Date(a.date) - new Date(b.date)); 
 
                     let tickerSplits = [];
@@ -1002,12 +1055,24 @@ ${splitInfoStr}`;
             html += `</tr>`;
 
             // Row 1: Groups
-            html += `<tr class="header-group-row">`;
-            groups.forEach(g => {
-                if(g.type === 'separator') html += `<th class="col-separator"></th>`;
-                else html += `<th colspan="${g.span}">${g.name}</th>`;
-            });
-            html += `</tr>`;
+html += `<tr class="header-group-row">`;
+html += `<th class="col-date" style="background:white !important; border:none !important; box-shadow:none !important; outline:none !important;"></th>`;
+let skipFirst = true;
+groups.forEach(g => {
+    if(g.type === 'separator') {
+        html += `<th class="col-separator"></th>`;
+    } else {
+        if(skipFirst && g.name === 'TAIEX') {
+            // For TAIEX group, reduce colspan by 1 because Date column is separate
+            html += `<th colspan="${g.span - 1}">${g.name}</th>`;
+            skipFirst = false;
+        } else {
+            html += `<th colspan="${g.span}">${g.name}</th>`;
+        }
+    }
+});
+html += `</tr>`;
+			
 
             // Row 2: Meta
             html += `<tr class="header-meta-row"><th class="col-date no-border-bottom"></th>`; 
